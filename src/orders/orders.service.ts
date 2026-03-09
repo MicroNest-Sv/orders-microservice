@@ -50,7 +50,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     if (!order) {
       throw new RpcException({
-        statusCode: HttpStatus.NOT_FOUND,
+        status: HttpStatus.NOT_FOUND,
         message: `Order with id ${id} not found`,
       });
     }
@@ -65,14 +65,14 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     if (!order) {
       throw new RpcException({
-        statusCode: HttpStatus.NOT_FOUND,
+        status: HttpStatus.NOT_FOUND,
         message: `Order with id ${changeStatusDto.id} not found`,
       });
     }
 
     if (order.status === changeStatusDto.status) {
       throw new RpcException({
-        statusCode: HttpStatus.BAD_REQUEST,
+        status: HttpStatus.BAD_REQUEST,
         message: `Order with id ${changeStatusDto.id} already in status ${changeStatusDto.status}`,
       });
     }
