@@ -1,16 +1,25 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { envs } from './config';
 import { HttpStatus, Logger, ValidationPipe } from '@nestjs/common';
-import { MicroserviceOptions, RpcException, Transport } from '@nestjs/microservices';
+import {
+  MicroserviceOptions,
+  RpcException,
+  Transport,
+} from '@nestjs/microservices';
+
+import { AppModule } from './app.module';
+import { appConfig } from './config';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
+  const appConfigValues = appConfig();
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
       transport: Transport.TCP,
       options: {
-        port: envs.port,
+        port: appConfigValues.port,
       },
     },
   );
@@ -33,9 +42,7 @@ async function bootstrap() {
 
   await app.listen();
 
-  Logger.log(
-    `Orders Microservice running on port: ${envs.port}`,
-    'NestMicroservice',
-  );
+  logger.log(`Orders Microservice running on port ${appConfigValues.port}`);
 }
-bootstrap();
+
+void bootstrap();
