@@ -5,12 +5,14 @@ import { EnvValidationError } from '@src/common/exceptions';
 
 const appEnvSchema = z.object({
   PORT: z.coerce.number().default(3002),
+  DATABASE_URL: z.string().nonempty(),
 });
 
 type AppEnv = z.infer<typeof appEnvSchema>;
 
 export interface AppConfig {
   port: number;
+  databaseUrl: string;
 }
 
 export default registerAs('app', (): AppConfig => {
@@ -22,5 +24,6 @@ export default registerAs('app', (): AppConfig => {
 
   return {
     port: env.PORT,
+    databaseUrl: env.DATABASE_URL,
   };
 });
