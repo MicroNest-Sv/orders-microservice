@@ -1,42 +1,40 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { CreateOrderDto, OrderPaginationDto } from './dto';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { ChangeStatusDto } from './dto/change-status.dto';
+
+import { PrismaService } from '@src/common/services';
+
+import { CreateOrderDto, OrderPaginationDto, ChangeStatusDto } from './dto';
 
 @Injectable()
-export class OrdersService extends PrismaClient implements OnModuleInit {
+export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  async onModuleInit() {
-    await this.$connect();
-    this.logger.log('Connected to the database');
-  }
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   create(createOrderDto: CreateOrderDto) {
-    return this.order.create({
+    return this.prisma.order.create({
       data: createOrderDto,
     });
   }
 
   async findAll(orderPaginationDto: OrderPaginationDto) {
-    const { limit, page, status } = orderPaginationDto;
+    const { page, perPage, status } = orderPaginationDto;
 
     return {
       meta: {
-        totalItems: await this.order.count({ where: { status } }),
+        totalItems: await this.prisma.order.count({ where: { status } }),
         totalPages: Math.ceil(
-          (await this.order.count({ where: { status } })) / limit,
+          (await this.prisma.order.count({ where: { status } })) / perPage,
         ),
         currentPage: page,
         lastPage: Math.ceil(
-          (await this.order.count({ where: { status } })) / limit,
+          (await this.prisma.order.count({ where: { status } })) / perPage,
         ),
-        itemsPerPage: limit,
+        itemsPerPage: perPage,
       },
-      data: await this.order.findMany({
-        take: limit,
-        skip: limit * (page - 1),
+      data: await this.prisma.order.findMany({
+        take: perPage,
+        skip: perPage * (page - 1),
         where: { status },
       }),
     };
@@ -44,7 +42,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
   async findOne(id: string) {
     console.log(id);
-    const order = await this.order.findUnique({
+    const order = await this.prisma.order.findUnique({
       where: { id },
     });
 
@@ -59,7 +57,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   }
 
   async changeStatus(changeStatusDto: ChangeStatusDto) {
-    const order = await this.order.findUnique({
+    const order = await this.prisma.order.findUnique({
       where: { id: changeStatusDto.id },
     });
 
@@ -77,7 +75,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    return this.order.update({
+    return this.prisma.order.update({
       where: { id: changeStatusDto.id },
       data: { status: changeStatusDto.status },
     });

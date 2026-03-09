@@ -10,5 +10,5 @@ export class PaginationDto {
   @IsOptional()
   @IsPositive()
   @Type(() => Number)
-  readonly limit: number = 10;
+  readonly perPage: number = 10;
 }

@@ -1,8 +1,18 @@
 import { Module } from '@nestjs/common';
-import { OrdersModule } from './orders/orders.module';
+import { ConfigModule } from '@nestjs/config';
+
+import { OrdersModule } from './orders';
+import { appConfig } from './config';
 
 @Module({
-  imports: [OrdersModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      load: [appConfig],
+    }),
+    OrdersModule,
+  ],
   controllers: [],
   providers: [],
 })
