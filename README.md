@@ -1,25 +1,21 @@
-# Orders MicroService
+# Orders Microservice
 
-## Getting Started
+Microservicio de órdenes construido con [NestJS](https://nestjs.com/), Prisma y Postgres (levanta la BD con Docker).
 
-To start the Orders MicroService, run the following command:
+## Inicio rápido
 
-```sh
-docker compose up -d
+```bash
+# 1. Instalar dependencias
+pnpm install
+
+# 2. Generar cliente de Prisma y ejecutar migraciones
+pnpm exec prisma generate
+pnpm exec prisma migrate dev
+
+# 3. Ejecutar en desarrollo
+pnpm run start:dev
 ```
 
-## Development Steps
+La app usa el puerto `3002` por defecto (configurable en `.env`).
 
-1. Clone the project repository.
-2. Create a `.env` file based on the `.env.example` file.
-3. Start the database with the following command:
-
-  ```sh
-  docker compose up -d
-  ```
-
-4. Start the project in development mode using Yarn:
-
-  ```sh
-  yarn start:dev
-  ```
+> La base de datos se espera en Postgres; puedes levantarla con `docker compose up -d`.
