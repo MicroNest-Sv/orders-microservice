@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 
 import { PrismaService } from '@src/common/services';
 
-import { CreateOrderDto, OrderPaginationDto, ChangeStatusDto } from './dto';
+import { CreateOrderDto, ChangeStatusDto, OrderQueryDto } from './dto';
 
 @Injectable()
 export class OrdersService {
@@ -17,12 +17,12 @@ export class OrdersService {
     });
   }
 
-  async findAll(orderPaginationDto: OrderPaginationDto) {
-    const { page, perPage, status } = orderPaginationDto;
+  async findAll(orderQueryDto: OrderQueryDto) {
+    const { page, perPage, status } = orderQueryDto;
 
     return {
-      meta: {
-        totalItems: await this.prisma.order.count({ where: { status } }),
+      pagination: {
+        totalRecords: await this.prisma.order.count({ where: { status } }),
         totalPages: Math.ceil(
           (await this.prisma.order.count({ where: { status } })) / perPage,
         ),
@@ -41,7 +41,6 @@ export class OrdersService {
   }
 
   async findOne(id: string) {
-    console.log(id);
     const order = await this.prisma.order.findUnique({
       where: { id },
     });
@@ -49,7 +48,7 @@ export class OrdersService {
     if (!order) {
       throw new RpcException({
         status: HttpStatus.NOT_FOUND,
-        message: `Order with id ${id} not found`,
+        messages: [`Order with id ${id} not found`],
       });
     }
 
@@ -64,14 +63,16 @@ export class OrdersService {
     if (!order) {
       throw new RpcException({
         status: HttpStatus.NOT_FOUND,
-        message: `Order with id ${changeStatusDto.id} not found`,
+        messages: [`Order with id ${changeStatusDto.id} not found`],
       });
     }
 
     if (order.status === changeStatusDto.status) {
       throw new RpcException({
         status: HttpStatus.BAD_REQUEST,
-        message: `Order with id ${changeStatusDto.id} already in status ${changeStatusDto.status}`,
+        messages: [
+          `Order with id ${changeStatusDto.id} already in status ${changeStatusDto.status}`,
+        ],
       });
     }
 
