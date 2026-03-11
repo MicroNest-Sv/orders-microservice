@@ -20,7 +20,7 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto) {
     const productIds = createOrderDto.items.map((item) => item.productId);
 
-    // NOTE: Validate that all products exist in the products service
+    // NOTE: Returns an array of products. If some products are not found, throws an error.
     const products = await firstValueFrom(
       this.productsClient
         .send<
@@ -45,7 +45,7 @@ export class OrdersService {
       0,
     );
 
-    return this.prisma.order.create({
+    const order = await this.prisma.order.create({
       data: {
         totalAmount,
         totalItems,
@@ -60,7 +60,20 @@ export class OrdersService {
           },
         },
       },
+      include: {
+        orderItems: {
+          select: { productId: true, quantity: true, price: true },
+        },
+      },
     });
+
+    return {
+      ...order,
+      orderItems: order.orderItems.map((item) => ({
+        ...item,
+        name: products.find((product) => product.id === item.productId)!.name,
+      })),
+    };
   }
 
   async findAll(orderQueryDto: OrderQueryDto) {
