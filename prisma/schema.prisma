@@ -15,19 +15,37 @@ datasource db {
 }
 
 enum OrderStatus {
-  PENDING
-  DELIVERED
-  CANCELLED
+  PENDING   @map("pending")
+  DELIVERED @map("delivered")
+  CANCELLED @map("cancelled")
+
+  @@map("order_status")
 }
 
 model Order {
   id          String      @id @default(uuid())
-  totalAmount Float
-  totalItems  Int
-  status      OrderStatus
+  totalAmount Float       @map("total_amount")
+  totalItems  Int         @map("total_items")
+  status      OrderStatus @default(PENDING)
   paid        Boolean     @default(false)
-  paidAt      DateTime?
+  paidAt      DateTime?   @map("paid_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  productId String @map("product_id")
+  quantity  Int
+  price     Float
+
+  order   Order?  @relation(fields: [orderId], references: [id])
+  orderId String? @map("order_id")
+
+  @@map("order_items")
 }
