@@ -1,20 +1,38 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { catchError, firstValueFrom } from 'rxjs';
 
 import { PrismaService } from '@src/common/services';
 
+import { PRODUCTS_SERVICE } from './constants';
 import { CreateOrderDto, ChangeStatusDto, OrderQueryDto } from './dto';
+import { ProductsValidationResponse } from './interfaces';
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PRODUCTS_SERVICE) private readonly productsClient: ClientProxy,
+  ) {}
 
-  create(createOrderDto: CreateOrderDto) {
-    return this.prisma.order.create({
-      data: createOrderDto,
-    });
+  async create(createOrderDto: CreateOrderDto) {
+    const productIds = createOrderDto.items.map((item) => item.productId);
+
+    const products = await firstValueFrom(
+      this.productsClient
+        .send<
+          ProductsValidationResponse[]
+        >({ cmd: 'validate_product_exists' }, productIds)
+        .pipe(
+          catchError((error: string | object) => {
+            throw new RpcException(error);
+          }),
+        ),
+    );
+
+    return products;
   }
 
   async findAll(orderQueryDto: OrderQueryDto) {
