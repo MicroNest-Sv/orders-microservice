@@ -20,6 +20,7 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto) {
     const productIds = createOrderDto.items.map((item) => item.productId);
 
+    // NOTE: Validate that all products exist in the products service
     const products = await firstValueFrom(
       this.productsClient
         .send<
@@ -32,7 +33,34 @@ export class OrdersService {
         ),
     );
 
-    return products;
+    const totalAmount = createOrderDto.items.reduce((total, item) => {
+      const price = products.find(
+        (product) => product.id === item.productId,
+      )!.price;
+      return total + price * item.quantity;
+    }, 0);
+
+    const totalItems = createOrderDto.items.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    );
+
+    return this.prisma.order.create({
+      data: {
+        totalAmount,
+        totalItems,
+        orderItems: {
+          createMany: {
+            data: createOrderDto.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: products.find((product) => product.id === item.productId)!
+                .price,
+            })),
+          },
+        },
+      },
+    });
   }
 
   async findAll(orderQueryDto: OrderQueryDto) {
