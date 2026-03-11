@@ -102,6 +102,11 @@ export class OrdersService {
   async findOne(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
+      include: {
+        orderItems: {
+          select: { productId: true, quantity: true, price: true },
+        },
+      },
     });
 
     if (!order) {
@@ -111,7 +116,28 @@ export class OrdersService {
       });
     }
 
-    return order;
+    const productIds = order.orderItems.map((item) => item.productId);
+
+    // NOTE: Returns an array of products. If some products are not found, throws an error.
+    const products = await firstValueFrom(
+      this.productsClient
+        .send<
+          ProductsValidationResponse[]
+        >({ cmd: 'validate_product_exists' }, productIds)
+        .pipe(
+          catchError((error: string | object) => {
+            throw new RpcException(error);
+          }),
+        ),
+    );
+
+    return {
+      ...order,
+      orderItems: order.orderItems.map((item) => ({
+        ...item,
+        name: products.find((product) => product.id === item.productId)!.name,
+      })),
+    };
   }
 
   async changeStatus(changeStatusDto: ChangeStatusDto) {
