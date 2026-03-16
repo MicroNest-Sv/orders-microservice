@@ -2,9 +2,9 @@ import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { catchError, firstValueFrom } from 'rxjs';
 
+import { NATS_SERVICE } from '@src/config';
 import { PrismaService } from '@src/common/services';
 
-import { PRODUCTS_SERVICE } from './constants';
 import { CreateOrderDto, ChangeStatusDto, OrderQueryDto } from './dto';
 import { ProductsValidationResponse } from './interfaces';
 
@@ -14,7 +14,7 @@ export class OrdersService {
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(PRODUCTS_SERVICE) private readonly productsClient: ClientProxy,
+    @Inject(NATS_SERVICE) private readonly natsClient: ClientProxy,
   ) {}
 
   async create(createOrderDto: CreateOrderDto) {
@@ -22,7 +22,7 @@ export class OrdersService {
 
     // NOTE: Returns an array of products. If some products are not found, throws an error.
     const products = await firstValueFrom(
-      this.productsClient
+      this.natsClient
         .send<
           ProductsValidationResponse[]
         >({ cmd: 'validate_product_exists' }, productIds)
@@ -120,7 +120,7 @@ export class OrdersService {
 
     // NOTE: Returns an array of products. If some products are not found, throws an error.
     const products = await firstValueFrom(
-      this.productsClient
+      this.natsClient
         .send<
           ProductsValidationResponse[]
         >({ cmd: 'validate_product_exists' }, productIds)

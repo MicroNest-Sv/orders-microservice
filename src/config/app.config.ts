@@ -4,19 +4,17 @@ import z from 'zod';
 import { EnvValidationError } from '@src/common/exceptions';
 
 const appEnvSchema = z.object({
-  PORT: z.coerce.number().default(3002),
   DATABASE_URL: z.string().nonempty(),
-  PRODUCTS_SERVICE_HOST: z.string().nonempty(),
-  PRODUCTS_SERVICE_PORT: z.coerce.number().default(3001),
+  NATS_SERVERS: z
+    .string()
+    .transform((str) => str.split(',').map((s) => s.trim())),
 });
 
 type AppEnv = z.infer<typeof appEnvSchema>;
 
 export interface AppConfig {
-  port: number;
   databaseUrl: string;
-  productsServiceHost: string;
-  productsServicePort: number;
+  natsServers: string[];
 }
 
 export default registerAs('app', (): AppConfig => {
@@ -27,9 +25,7 @@ export default registerAs('app', (): AppConfig => {
   const env: AppEnv = parsed.data;
 
   return {
-    port: env.PORT,
     databaseUrl: env.DATABASE_URL,
-    productsServiceHost: env.PRODUCTS_SERVICE_HOST,
-    productsServicePort: env.PRODUCTS_SERVICE_PORT,
+    natsServers: env.NATS_SERVERS,
   };
 });

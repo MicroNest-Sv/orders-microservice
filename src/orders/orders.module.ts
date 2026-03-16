@@ -2,25 +2,23 @@ import { Module } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
-import { appConfig } from '@src/config';
+import { appConfig, NATS_SERVICE } from '@src/config';
 import { PrismaService } from '@src/common/services';
 
-import { PRODUCTS_SERVICE } from './constants';
-import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { OrdersService } from './orders.service';
 
 @Module({
   controllers: [OrdersController],
   imports: [
     ClientsModule.registerAsync([
       {
-        name: PRODUCTS_SERVICE,
+        name: NATS_SERVICE,
         inject: [appConfig.KEY],
         useFactory: (config: ConfigType<typeof appConfig>) => ({
-          transport: Transport.TCP,
+          transport: Transport.NATS,
           options: {
-            host: config.productsServiceHost,
-            port: config.productsServicePort,
+            servers: config.natsServers,
           },
         }),
       },
