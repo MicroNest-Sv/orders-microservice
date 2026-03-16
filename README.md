@@ -1,21 +1,28 @@
 # Orders Microservice
 
-Microservicio de órdenes construido con [NestJS](https://nestjs.com/), Prisma y Postgres (levanta la BD con Docker).
+Microservicio de órdenes construido con [NestJS](https://nestjs.com/), Prisma y Postgres. Se comunica vía [NATS](https://nats.io/).
 
 ## Inicio rápido
 
 ```bash
-# 1. Instalar dependencias
+# 1. Levantar NATS y Postgres
+docker run -d --name nats-server -p 4222:4222 -p 8222:8222 nats
+docker compose up -d  # Postgres
+
+# 2. Instalar dependencias
 pnpm install
 
-# 2. Generar cliente de Prisma y ejecutar migraciones
+# 3. Generar cliente de Prisma y ejecutar migraciones
 pnpm exec prisma generate
 pnpm exec prisma migrate dev
 
-# 3. Ejecutar en desarrollo
+# 4. Ejecutar en desarrollo
 pnpm run start:dev
 ```
 
-La app usa el puerto `3002` por defecto (configurable en `.env`).
+## Variables de entorno
 
-> La base de datos se espera en Postgres; puedes levantarla con `docker compose up -d`.
+```env
+NATS_SERVERS="nats://localhost:4222"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5435/orders_db?schema=public"
+```
