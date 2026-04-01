@@ -1,6 +1,6 @@
 services:
   orders-db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     volumes:
       - ./postgres:/var/lib/postgresql/data
