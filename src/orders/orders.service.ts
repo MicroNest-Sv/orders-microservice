@@ -4,8 +4,14 @@ import { catchError, firstValueFrom } from 'rxjs';
 
 import { NATS_SERVICE } from '@src/config';
 import { PrismaService } from '@src/common/services';
+import { OrderStatus } from '@src/generated/prisma/enums';
 
-import { CreateOrderDto, ChangeStatusDto, OrderQueryDto } from './dto';
+import {
+  CreateOrderDto,
+  ChangeStatusDto,
+  OrderQueryDto,
+  PaymentSucceededDto,
+} from './dto';
 import {
   PaymentSessionResponse,
   ProductsValidationResponse,
@@ -189,5 +195,26 @@ export class OrdersService {
       where: { id: changeStatusDto.id },
       data: { status: changeStatusDto.status },
     });
+  }
+
+  async paymentSucceeded(dto: PaymentSucceededDto) {
+    const order = await this.prisma.order.update({
+      where: { id: dto.orderId },
+      data: {
+        paid: true,
+        status: OrderStatus.PAID,
+        stripePaymentId: dto.paymentIntentId,
+        orderReceipt: {
+          create: {
+            receiptUrl: dto.receiptUrl,
+          },
+        },
+      },
+      include: { orderReceipt: true },
+    });
+
+    this.logger.log(`Order ${dto.orderId} paid. Receipt: ${dto.receiptUrl}`);
+
+    return order;
   }
 }
