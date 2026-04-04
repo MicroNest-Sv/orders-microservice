@@ -6,7 +6,10 @@ import { NATS_SERVICE } from '@src/config';
 import { PrismaService } from '@src/common/services';
 
 import { CreateOrderDto, ChangeStatusDto, OrderQueryDto } from './dto';
-import { ProductsValidationResponse } from './interfaces';
+import {
+  PaymentSessionResponse,
+  ProductsValidationResponse,
+} from './interfaces';
 
 @Injectable()
 export class OrdersService {
@@ -67,13 +70,34 @@ export class OrdersService {
       },
     });
 
-    return {
+    const orderWithNames = {
       ...order,
       orderItems: order.orderItems.map((item) => ({
         ...item,
         name: products.find((product) => product.id === item.productId)!.name,
       })),
     };
+
+    const paymentSession = await firstValueFrom(
+      this.natsClient
+        .send<PaymentSessionResponse>('payments.create', {
+          orderId: order.id,
+          currency: 'usd',
+          items: orderWithNames.orderItems.map((item) => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        })
+        .pipe(
+          catchError((error: string | object) => {
+            console.log(error);
+            throw new RpcException(error);
+          }),
+        ),
+    );
+
+    return { ...orderWithNames, paymentSession };
   }
 
   async findAll(orderQueryDto: OrderQueryDto) {

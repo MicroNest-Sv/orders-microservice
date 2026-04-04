@@ -29,12 +29,17 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       exceptionFactory: (errors) => {
-        const messages = errors.map((error) =>
-          Object.values(error.constraints ?? {}).join(', '),
-        );
+        const extractMessages = (
+          errors: import('class-validator').ValidationError[],
+        ): string[] =>
+          errors.flatMap((error) => [
+            ...Object.values(error.constraints ?? {}),
+            ...extractMessages(error.children ?? []),
+          ]);
+
         return new RpcException({
           status: HttpStatus.BAD_REQUEST,
-          message: messages,
+          message: extractMessages(errors),
         });
       },
     }),
